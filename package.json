@@ -1,16 +1,44 @@
 {
-  "name": "dianjing",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "app-dianjing",
+  "version": "0.1.0",
+  "description": "點睛 Dianjing — 選取文字按 Alt+I,本地 LLM 依場景潤飾語氣(LINE/Email/貼文/正式回報)。跨平台、模型內嵌、免裝 Ollama。",
+  "main": "main.js",
+  "author": "jaylooloomi",
+  "license": "MIT",
   "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.mjs",
+    "validate": "node validate.mjs",
+    "dist:win": "electron-builder --win --dir",
+    "dist:mac": "electron-builder --mac"
+  },
   "dependencies": {
     "node-llama-cpp": "^3.18.1"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.jaylooloomi.dianjing",
+    "productName": "Dianjing",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "!**/*.gguf"
+    ],
+    "asarUnpack": [
+      "**/node_modules/node-llama-cpp/**",
+      "**/node_modules/@node-llama-cpp/**"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    }
   }
 }
