@@ -24,7 +24,7 @@ function createPopup() {
 async function onHotkey() {
   try {
     const { text, prior } = await textCapture.captureSelection();
-    if (!text || !text.trim()) { notify("請先選取文字,再按 Alt+I"); return; }
+    if (!text || !text.trim()) { notify("請先選取文字,再按 Ctrl+Alt+I"); return; }
     capturedPrior = prior;
     if (popup) {
       popup.show();
@@ -52,8 +52,8 @@ app.whenReady().then(async () => {
     })
     .catch((e) => { console.error("[dianjing] model load FAILED:", e && e.stack || e); });
 
-  const ok = globalShortcut.register("Alt+I", onHotkey);
-  console.log("[dianjing] Alt+I registered:", ok);
+  const ok = globalShortcut.register("Control+Alt+I", onHotkey);
+  console.log("[dianjing] Ctrl+Alt+I registered:", ok);
 });
 
 ipcMain.handle("polish:scenes", () => Object.keys(SCENES).map((k) => ({ key: k, label: SCENES[k].label })));
