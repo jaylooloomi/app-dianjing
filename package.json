@@ -14,7 +14,8 @@
     "dist:mac": "electron-builder --mac"
   },
   "dependencies": {
-    "node-llama-cpp": "^3.18.1"
+    "node-llama-cpp": "^3.18.1",
+    "uiohook-napi": "^1.5.5"
   },
   "devDependencies": {
     "electron": "^33.4.11",
@@ -31,7 +32,8 @@
     ],
     "asarUnpack": [
       "**/node_modules/node-llama-cpp/**",
-      "**/node_modules/@node-llama-cpp/**"
+      "**/node_modules/@node-llama-cpp/**",
+      "**/node_modules/uiohook-napi/**"
     ],
     "win": {
       "target": "nsis"

@@ -1,5 +1,6 @@
 const { app, globalShortcut, BrowserWindow, ipcMain, Menu, clipboard, Notification } = require("electron");
 const path = require("path");
+const { uIOhook, UiohookKey } = require("uiohook-napi");
 const textCapture = require("./src/textCapture.js");
 const polishService = require("./src/polishService.js");
 const modelManager = require("./src/modelManager.js");
@@ -24,13 +25,30 @@ function createPopup() {
 async function onHotkey() {
   try {
     const { text, prior } = await textCapture.captureSelection();
-    if (!text || !text.trim()) { notify("請先選取文字,再按 Ctrl+Alt+I"); return; }
+    if (!text || !text.trim()) { notify("請先選取文字,再按右 Alt"); return; }
     capturedPrior = prior;
     if (popup) {
       popup.show();
       popup.webContents.send("polish:open", { text, ready: modelReady });
     }
   } catch (e) { notify("擷取選取文字失敗:" + e.message); }
+}
+
+let _altClean = false, _lastTrigger = 0;
+// 右 Alt 觸發:單獨點一下右 Alt(中間沒按其他鍵)→ 放開時觸發。
+// 在 keyup 觸發是為了避免 Alt 還按著時送 ^c 變成 Ctrl+Alt+C;_altClean 排除「右 Alt+其他鍵」組合誤觸。
+function startHotkey() {
+  try {
+    uIOhook.on("keydown", (e) => { _altClean = (e.keycode === UiohookKey.AltRight); });
+    uIOhook.on("keyup", (e) => {
+      if (e.keycode !== UiohookKey.AltRight) return;
+      const now = Date.now();
+      if (_altClean && now - _lastTrigger > 600) { _lastTrigger = now; onHotkey(); }
+      _altClean = false;
+    });
+    uIOhook.start();
+    console.log("[dianjing] right-Alt hook started");
+  } catch (e) { console.error("[dianjing] uiohook start failed:", e.message); }
 }
 
 app.whenReady().then(async () => {
@@ -52,8 +70,7 @@ app.whenReady().then(async () => {
     })
     .catch((e) => { console.error("[dianjing] model load FAILED:", e && e.stack || e); });
 
-  const ok = globalShortcut.register("Control+Alt+I", onHotkey);
-  console.log("[dianjing] Ctrl+Alt+I registered:", ok);
+  startHotkey(); // 右 Alt(uiohook)
 });
 
 ipcMain.handle("polish:scenes", () => Object.keys(SCENES).map((k) => ({ key: k, label: SCENES[k].label })));
@@ -73,7 +90,7 @@ ipcMain.handle("polish:replace", async (e, text) => {
 ipcMain.handle("polish:copy", (e, text) => { clipboard.writeText(text); return { ok: true }; });
 ipcMain.handle("polish:close", () => { if (popup) popup.hide(); });
 
-app.on("will-quit", () => globalShortcut.unregisterAll());
+app.on("will-quit", () => { globalShortcut.unregisterAll(); try { uIOhook.stop(); } catch {} });
 app.on("window-all-closed", () => {}); // 背景常駐,不退出
 
 // 開發/測試用:DIANJING_TEST=<text> 啟動後自動跑一次潤飾(不需真的全選),驗證整條鏈路。
