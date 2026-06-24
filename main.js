@@ -4,7 +4,7 @@ const { uIOhook, UiohookKey } = require("uiohook-napi");
 const textCapture = require("./src/textCapture.js");
 const polishService = require("./src/polishService.js");
 const modelManager = require("./src/modelManager.js");
-const { SCENES } = require("./src/polishPrompts.js");
+const { SCENES, LANGS } = require("./src/polishPrompts.js");
 
 let popup = null;
 let modelReady = false;
@@ -14,7 +14,7 @@ function notify(msg) { try { new Notification({ title: "點睛 Dianjing", body: 
 
 function createPopup() {
   popup = new BrowserWindow({
-    width: 580, height: 560, show: false, frame: false, resizable: true,
+    width: 580, height: 460, show: false, frame: false, resizable: true,
     alwaysOnTop: true, skipTaskbar: true,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false },
   });
@@ -74,10 +74,11 @@ app.whenReady().then(async () => {
 });
 
 ipcMain.handle("polish:scenes", () => Object.keys(SCENES).map((k) => ({ key: k, label: SCENES[k].label })));
-ipcMain.handle("polish:run", async (e, { scene, text }) => {
+ipcMain.handle("polish:langs", () => Object.keys(LANGS).map((k) => ({ key: k, label: LANGS[k] })));
+ipcMain.handle("polish:run", async (e, { scene, text, lang }) => {
   if (!modelReady) return { error: "模型尚未就緒" };
   try {
-    await polishService.polish({ text, scene, onChunk: (c) => { if (popup && !popup.isDestroyed()) popup.webContents.send("polish:chunk", c); } });
+    await polishService.polish({ text, scene, lang, onChunk: (c) => { if (popup && !popup.isDestroyed()) popup.webContents.send("polish:chunk", c); } });
     return { done: true };
   } catch (err) { return { error: err.message }; }
 });
@@ -89,6 +90,12 @@ ipcMain.handle("polish:replace", async (e, text) => {
 });
 ipcMain.handle("polish:copy", (e, text) => { clipboard.writeText(text); return { ok: true }; });
 ipcMain.handle("polish:close", () => { if (popup) popup.hide(); });
+// 視窗高度貼齊內容(前端用 ResizeObserver 量測後送來),避免底部留白。
+ipcMain.on("polish:resize", (e, h) => {
+  if (!popup || popup.isDestroyed()) return;
+  const w = popup.getContentSize()[0];
+  popup.setContentSize(w, Math.max(160, Math.min(900, Math.round(h))));
+});
 
 app.on("will-quit", () => { globalShortcut.unregisterAll(); try { uIOhook.stop(); } catch {} });
 app.on("window-all-closed", () => {}); // 背景常駐,不退出
@@ -100,11 +107,13 @@ if (process.env.DIANJING_TEST) {
     await waitReady();
     if (!modelReady) { console.log("[dianjing][test] model not ready, abort"); return; }
     const text = process.env.DIANJING_TEST;
-    for (const scene of ["boss", "line"]) {
+    const lang = process.env.DIANJING_TEST_LANG || "zh-TW";
+    const scenes = (process.env.DIANJING_TEST_SCENES || "boss,line").split(",");
+    for (const scene of scenes) {
       let acc = "";
       const t = Date.now();
-      await polishService.polish({ text, scene, onChunk: (c) => { acc += c; } });
-      console.log(`[dianjing][test] ${scene} (${((Date.now() - t) / 1000).toFixed(1)}s): ${acc.trim()}`);
+      await polishService.polish({ text, scene, lang, onChunk: (c) => { acc += c; } });
+      console.log(`[dianjing][test] ${scene}/${lang} (${((Date.now() - t) / 1000).toFixed(1)}s): ${acc.trim()}`);
     }
     console.log("[dianjing][test] DONE");
     app.quit();

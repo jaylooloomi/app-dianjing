@@ -16,10 +16,10 @@ async function load(modelPath, opts = {}) {
 function isReady() { return ready; }
 
 // polish({ text, scene, onChunk, signal }) → 回傳完整潤飾後文字。
-async function polish({ text, scene, onChunk, signal }) {
+async function polish({ text, scene, lang, onChunk, signal }) {
   if (!ready) throw new Error("模型尚未載入");
   const { LlamaChatSession } = await nlc();
-  const { system, user } = buildPolishPrompt(scene, text);
+  const { system, user } = buildPolishPrompt(scene, text, lang);
   const ctx = await model.createContext({ contextSize: 2048 });
   try {
     const session = new LlamaChatSession({ contextSequence: ctx.getSequence(), systemPrompt: system });

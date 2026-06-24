@@ -13,6 +13,8 @@
     .bar .title { font-weight: 600; }
     .bar .spacer { flex: 1; }
     .bar .x { -webkit-app-region: no-drag; cursor: pointer; color: #94a3b8; border: none; background: none; font-size: 16px; }
+    .bar .langlbl { font-size: 11px; color: #94a3b8; }
+    .langsel { -webkit-app-region: no-drag; background: #0f172a; color: #cbd5e1; border: 1px solid #334155; border-radius: 6px; padding: 3px 6px; font-size: 12px; }
     .wrap { padding: 12px 14px; }
     .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; margin: 4px 0; }
     .orig { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; color: #cbd5e1;
@@ -34,7 +36,9 @@
   </style>
 </head>
 <body>
-  <div class="bar"><span class="title">🪶 點睛</span><span class="spacer"></span><button class="x" id="closeX">✕</button></div>
+  <div class="bar"><span class="title">🪶 點睛</span><span class="spacer"></span>
+    <span class="langlbl">回覆語言</span><select class="langsel" id="lang"></select>
+    <button class="x" id="closeX">✕</button></div>
   <div class="wrap">
     <div class="label">原文</div>
     <div class="orig" id="orig"></div>

@@ -1,5 +1,15 @@
 const $ = (id) => document.getElementById(id);
 let original = "", currentScene = "general", ready = false, polishing = false;
+let lang = localStorage.getItem("dj_lang") || "zh-TW";
+
+async function buildLangs() {
+  const langs = await window.dianjing.langs();
+  const sel = $("lang");
+  sel.innerHTML = "";
+  langs.forEach((l) => { const o = document.createElement("option"); o.value = l.key; o.textContent = l.label; sel.appendChild(o); });
+  sel.value = lang;
+  sel.onchange = () => { lang = sel.value; localStorage.setItem("dj_lang", lang); if (ready && !polishing) run(); };
+}
 
 const setStatus = (html) => { $("status").innerHTML = html; };
 const markActive = () => document.querySelectorAll(".scene").forEach((b) => b.classList.toggle("active", b.dataset.key === currentScene));
@@ -24,7 +34,7 @@ async function run() {
   polishing = true;
   $("result").value = "";
   setStatus('<span class="spin">⏳</span> 潤飾中…');
-  const r = await window.dianjing.run(currentScene, original);
+  const r = await window.dianjing.run(currentScene, original, lang);
   polishing = false;
   setStatus(r && r.error ? "⚠️ " + r.error : "✓ 完成");
 }
@@ -46,4 +56,18 @@ $("closeBtn").onclick = () => window.dianjing.close();
 $("closeX").onclick = () => window.dianjing.close();
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") window.dianjing.close(); });
 
+buildLangs();
 buildScenes();
+
+// 視窗高度貼齊內容,消除底部留白:量測標題列 + 內容區總高,通知主行程調整視窗。
+// 內容變動(場景換行、原文、語言切換)時 ResizeObserver 會自動重新量測。
+function fitHeight() {
+  const bar = document.querySelector(".bar");
+  const wrap = document.querySelector(".wrap");
+  if (!bar || !wrap) return;
+  const h = Math.ceil(bar.getBoundingClientRect().height + wrap.getBoundingClientRect().height);
+  window.dianjing.resize(h);
+}
+const _fitRO = new ResizeObserver(() => fitHeight());
+_fitRO.observe(document.querySelector(".bar"));
+_fitRO.observe(document.querySelector(".wrap"));
