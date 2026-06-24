@@ -11,6 +11,8 @@
 [![Local LLM](https://img.shields.io/badge/LLM-Qwen2.5--1.5B%20(local)-6f42c1?style=flat-square)](#how-it-works)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
 
+🌐 &nbsp; **English** &nbsp;·&nbsp; [繁體中文](README.zh-TW.md)
+
 </div>
 
 ---
